@@ -1,3 +1,5 @@
+import json
+
 def display_menu():
     print("\n --- Budget Tracker ---")
     print("1. Add regular income")
@@ -14,12 +16,45 @@ def monthly(frequency, amount):
         return amount * 52 / 12
     else:
         return amount
+    
+def save_data(regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings):
+    data_to_output = {
+        "regular_incomes" : regular_incomes,
+        "oneoff_incomes" : oneoff_incomes,
+        "regular_spendings" : regular_spendings,
+        "oneoff_spendings" : oneoff_spendings,
+    }
+    with open("data.json", "w") as file:
+        json.dump(data_to_output, file)
 
-regular_incomes = []
-oneoff_incomes = []
+def load_data():
+    try:
+        with open("data.json", "r") as file:
+            data_to_load = json.load(file)
 
-regular_spendings = []
-oneoff_spendings = []
+        regular_incomes = data_to_load["regular_incomes"]
+        oneoff_incomes = data_to_load["oneoff_incomes"]
+        regular_spendings = data_to_load["regular_spendings"]
+        oneoff_spendings = data_to_load["oneoff_spendings"]
+
+        return regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings
+    
+    except FileNotFoundError:
+        print("No saved data found, starting fresh")
+
+        regular_incomes = []
+        oneoff_incomes = []
+        regular_spendings = []
+        oneoff_spendings = []
+
+        return regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings
+    
+regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings = load_data()
+
+# regular_incomes = []
+# oneoff_incomes = []
+# regular_spendings = []
+# oneoff_spendings = []
 
 while True:
     display_menu()
@@ -108,11 +143,11 @@ while True:
         for income in oneoff_incomes:
             oneoff_income_total += income["income_amount"]
 
-        print("Total oneoff income: ", oneoff_income_total)
+        print(f"Total oneoff income: {oneoff_income_total:,.2f}")
 
-        print("Total regular and oneoff income: ", regular_income_total + oneoff_income_total)
+        print(f"Total regular and oneoff income: {(regular_income_total + oneoff_income_total):,.2f}")
 
-        print("Regular spendings: ", len(regular_spendings))
+        print(f"Regular spendings: ", len(regular_spendings))
 
         regular_spending_total = 0
         oneoff_spending_total = 0
@@ -125,14 +160,15 @@ while True:
         for spending in oneoff_spendings:
             oneoff_spending_total += spending["spending_amount"]
         
-        print("Total oneoff spending: ", oneoff_spending_total)
-        print("Total regular and oneoff spending: ", regular_spending_total + oneoff_spending_total)
+        print(f"Total oneoff spending: {oneoff_spending_total:,.2f}")
+        print(f"Total regular and oneoff spending: {(regular_spending_total + oneoff_spending_total):,.2f}")
 
         print(f"Monthly money left after regular spending: {(regular_income_total-regular_spending_total):,.2f}")
         print(f"Monthly money left after total spending {(regular_income_total-(regular_spending_total + oneoff_spending_total)):,.2f}")
 
 
     elif option == "6":
+        save_data(regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings)
         print("Quitting program....")
         break
 
