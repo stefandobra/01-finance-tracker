@@ -1,4 +1,13 @@
 import json
+import os
+from anthropic import Anthropic
+from dotenv import load_dotenv
+
+
+load_dotenv()
+client = Anthropic(
+    api_key=os.getenv("FINANCE_TRACKER_API_KEY")
+)
 
 def display_menu():
     print("\n --- Budget Tracker ---")
@@ -48,6 +57,21 @@ def load_data():
         oneoff_spendings = []
 
         return regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings
+
+def generate_AI_summary(regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings):
+    message = client.messages.create(
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": f"Please summarise this financial information. there are 2 types of income, regular which is expressed in monthly amounts and one off. same for spending. each of the 4 have both a category and a description of what the income or spending was for. The data is  named accordingly: regular_incomes {regular_incomes}, oneoff_incomes {oneoff_incomes}, regular_spendings {regular_spendings} and oneoff_spendings {oneoff_spendings}. Each of these types of income and spendings have items attached to them: regular_incomes has a number of regular_income items that each have category, income_description and monthly_income. oneoff_incomes has a number of oneoff_income items that each have category, income_description and income_amount. regular_spendings has a number of regular_spending items that each have category, spending_description and monthly_spending. oneoff_spendings has a number of oneoff_spending items that each have category, spending_description and spending_amount. I need you to act like a financial advisor and give me a summary that includes : total number of regular incomes and spendings and total monthly incomes and spendings, total one offs and total one off + regular income and spendings. also need a total monthly left after regular spending and total left after all spending"
+            }
+
+        ],
+        model="claude-sonnet-4-6",
+    )
+
+    return message
     
 regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings = load_data()
 
@@ -166,6 +190,13 @@ while True:
         print(f"Monthly money left after regular spending: {(regular_income_total-regular_spending_total):,.2f}")
         print(f"Monthly money left after total spending {(regular_income_total-(regular_spending_total + oneoff_spending_total)):,.2f}")
 
+        try:
+            AI_summary = generate_AI_summary(regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings).content[0].text
+            print(AI_summary)
+        except IndexError:
+            print("AI returned empty response")
+        except AttributeError:
+            print("AI response didn't contain readable text")
 
     elif option == "6":
         save_data(regular_incomes, oneoff_incomes, regular_spendings, oneoff_spendings)
